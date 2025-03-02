@@ -1,0 +1,3 @@
+# 修复Google Play下载
+DOMAIN-SUFFIX,services.googleapis.cn
+DOMAIN-SUFFIX,xn--ngstr-lra8j.com
