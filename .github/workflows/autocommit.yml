@@ -1,0 +1,79 @@
+name: Auto Update CIDR Lists
+on:
+  schedule:
+    - cron: '0 0 * * *'  # Run daily at midnight
+  workflow_dispatch:  # Allow manual trigger
+  push:
+    branches:
+      - main
+    paths:
+      - 'Ruleset/**'  # Only trigger on changes to Ruleset directory
+
+jobs:
+  update-cidr-lists:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Permission to commit and push to the repository
+    
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch all history for proper committing
+      
+      - name: Update CIDR lists
+        run: |
+          # Create Ruleset directory if it doesn't exist
+          mkdir -p Ruleset
+          
+          # Download latest CIDR lists
+          curl -s https://raw.githubusercontent.com/Loyalsoldier/geoip/release/text/private.txt -o Ruleset/private.txt
+          curl -s https://raw.githubusercontent.com/Loyalsoldier/geoip/release/text/cn.txt -o Ruleset/cn.txt
+          
+          # Format private.txt: Add "IP-CIDR " prefix and " ,no-resolve" suffix
+          sed -i 's/^/IP-CIDR,/' Ruleset/private.txt
+          sed -i 's/$/,no-resolve/' Ruleset/private.txt
+          
+          # Format cn.txt: Add "IP-CIDR " prefix and " ,no-resolve" suffix
+          sed -i 's/^/IP-CIDR,/' Ruleset/cn.txt
+          sed -i 's/$/,no-resolve/' Ruleset/cn.txt
+          
+          # Display updated content for verification
+          echo "Updated cn.txt content:"
+          head -n 5 Ruleset/cn.txt
+      
+      - name: Commit and push changes
+        run: |
+          # Check if there are changes to commit
+          if [[ $(git status --porcelain) ]]; then
+            # Configure Git
+            git config --local user.email "113399748+ruich-4@users.noreply.github.com"
+            git config --local user.name "ruich-4"
+            
+            # Define random commit messages
+            MESSAGES=(
+              "chore(bot): 😂 auto update CIDR lists"
+              "chore(bot): 😱 auto update CIDR lists"
+              "chore(bot): 👿 auto update CIDR lists"
+              "chore(bot): 💩 auto update CIDR lists"
+              "chore(bot): 🙏 auto update CIDR lists"
+              "chore(bot): 🙈 auto update CIDR lists"
+              "chore(bot): 🐐 auto update CIDR lists"
+              "chore(bot): 🤖 auto update CIDR lists"
+              "chore(bot): 🟩 auto update CIDR lists"
+              "chore(bot): 👻 auto update CIDR lists"
+            )
+            
+            # Select random message
+            RANDOM_INDEX=$((RANDOM % ${#MESSAGES[@]}))
+            COMMIT_MSG="${MESSAGES[$RANDOM_INDEX]}"
+            
+            # Add changes and commit
+            git add Ruleset/private.txt Ruleset/cn.txt
+            git commit -m "$COMMIT_MSG"
+            
+            # Push changes
+            git push origin main
+          else
+            echo "No changes to commit"
+          fi
