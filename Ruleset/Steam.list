@@ -2,5 +2,10 @@ DOMAIN-SUFFIX,steampowered.com
 DOMAIN-SUFFIX,steamstatic.com
 DOMAIN-SUFFIX,steamgames.com
 DOMAIN-SUFFIX,steamusercontent.com
-DOMAIN-SUFFIX,akamaihd.net
+DOMAIN,steamcdn-a.akamaihd.net
+DOMAIN,steamcommunity-a.akamaihd.net
+DOMAIN,steamstore-a.akamaihd.net
+DOMAIN,steamusercontent-a.akamaihd.net
+DOMAIN,steamuserimages-a.akamaihd.net
+DOMAIN,steamvideo-a.akamaihd.net
 DOMAIN-SUFFIX,steamcommunity.com
