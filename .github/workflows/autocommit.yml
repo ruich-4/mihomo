@@ -26,17 +26,35 @@ jobs:
           # Create Ruleset directory if it doesn't exist
           mkdir -p Ruleset
 
-          # Download latest CIDR lists
-          curl -s https://raw.githubusercontent.com/Loyalsoldier/geoip/release/text/private.txt -o Ruleset/private.list
-          curl -s https://raw.githubusercontent.com/Loyalsoldier/geoip/release/text/cn.txt -o Ruleset/cn.list
+          # Keep the current lists until both downloads pass validation.
+          cidr_tmp_dir=$(mktemp -d)
+          trap 'rm -rf "$cidr_tmp_dir"' EXIT
+          for name in private cn; do
+            curl --fail --show-error --silent --location --retry 3 --max-time 60 \
+              "https://raw.githubusercontent.com/Loyalsoldier/geoip/release/text/$name.txt" \
+              -o "$cidr_tmp_dir/$name.txt"
+          done
 
-          # Format private.list: Add "IP-CIDR " prefix and " ,no-resolve" suffix
-          sed -i 's/^/IP-CIDR,/' Ruleset/private.list
-          sed -i 's/$/,no-resolve/' Ruleset/private.list
+          python3 - "$cidr_tmp_dir" <<'PYTHON'
+          import ipaddress
+          import sys
+          from pathlib import Path
 
-          # Format cn.list: Add "IP-CIDR " prefix and " ,no-resolve" suffix
-          sed -i 's/^/IP-CIDR,/' Ruleset/cn.list
-          sed -i 's/$/,no-resolve/' Ruleset/cn.list
+          directory = Path(sys.argv[1])
+          for name in ("private", "cn"):
+              entries = (directory / f"{name}.txt").read_text().splitlines()
+              if not entries:
+                  raise ValueError(f"{name}: empty CIDR list")
+              rules = []
+              for entry in entries:
+                  ipaddress.ip_network(entry, strict=True)
+                  rules.append(f"IP-CIDR,{entry},no-resolve\n")
+              (directory / f"{name}.list").write_text("".join(rules))
+          PYTHON
+
+          for name in private cn; do
+            mv "$cidr_tmp_dir/$name.list" "Ruleset/$name.list"
+          done
 
           # Display updated content for verification
           echo "Updated cn.list content:"
